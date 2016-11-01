@@ -18,23 +18,27 @@ public class Reading extends SugarRecord {
     double localizationLongitude; // place
 
     String type;
-    double angleX;
-    double angleY;
-    double measurement;
+    double angleXoY;
+    double angleXoZ;
+    double measurementX;
+    double measurementY;
+    double measurementZ;
 
     Sensor sensor;
 
     public Reading() {
     }
 
-    public Reading(long time, double localizationLatitude, double localizationLongitude,
-                   String type, double angleX, double angleY, double measurement) {
+    public Reading(long time, double localizationLatitude, double localizationLongitude, String type, double angleXoY, double angleXoZ, double measurementX, double measurementY, double measurementZ, Sensor sensor) {
         this.time = time;
         this.localizationLatitude = localizationLatitude;
         this.localizationLongitude = localizationLongitude;
         this.type = type;
-        this.angleX = angleX;
-        this.angleY = angleY;
-        this.measurement = measurement;
+        this.angleXoY = angleXoY;
+        this.angleXoZ = angleXoZ;
+        this.measurementX = measurementX;
+        this.measurementY = measurementY;
+        this.measurementZ = measurementZ;
+        this.sensor = sensor;
     }
 }
