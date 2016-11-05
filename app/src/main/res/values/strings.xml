@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Sensing the environment</string>
     <string name="title_activity_maps">Map</string>
+    <string name="title_sensor_list">Sensors</string>
+    <string name="title_sensor_detail">Sensor Detail</string>
+    <string name="add_sensor">Add Sensor</string>
+    <string name="list_sensors">All Sensors</string>
 </resources>

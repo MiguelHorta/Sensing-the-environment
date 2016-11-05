@@ -22,11 +22,10 @@ public class Sensor extends SugarRecord {
     String givenName;
     String description;
 
-    public Sensor()
-    {}
+    public Sensor() {
+    }
 
-    public Sensor(String mac, double localizationLatitude, double localizationLongitude, String givenName, String description)
-    {
+    public Sensor(String mac, double localizationLatitude, double localizationLongitude, String givenName, String description) {
         this.mac = mac;
         this.localizationLatitude = localizationLatitude;
         this.localizationLongitude = localizationLongitude;
@@ -34,8 +33,21 @@ public class Sensor extends SugarRecord {
         this.description = description;
     }
 
-    List<Reading> getReadings()
-    {
+    List<Reading> getReadings() {
         return Reading.find(Reading.class, "reading = ?", new String[]{getId().toString()});
+    }
+
+    public String getMAC()
+    {
+        return mac;
+    }
+
+    public String getGivenName()
+    {
+        if(givenName != null && !givenName.isEmpty())
+        {
+            return givenName;
+        }
+        return mac;
     }
 }
