@@ -5,4 +5,7 @@
     <string name="title_sensor_detail">Sensor Detail</string>
     <string name="add_sensor">Add Sensor</string>
     <string name="list_sensors">All Sensors</string>
+    <string name="title_reading_list">Readings</string>
+    <string name="title_reading_detail">Reading Detail</string>
+    <string name="list_readings">All Readings</string>
 </resources>

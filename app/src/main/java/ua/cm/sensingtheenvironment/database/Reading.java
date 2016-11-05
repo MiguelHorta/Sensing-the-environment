@@ -41,4 +41,14 @@ public class Reading extends SugarRecord {
         this.measurementZ = measurementZ;
         this.sensor = sensor;
     }
+
+    public String getType()
+    {
+        return type;
+    }
+
+    public long getTimestamp()
+    {
+        return time;
+    }
 }

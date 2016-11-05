@@ -10,4 +10,8 @@
         android:id="@+id/list_sensors"
         android:title="@string/list_sensors">
     </item>
+    <item
+        android:id="@+id/list_readings"
+        android:title="@string/list_readings">
+    </item>
 </menu>

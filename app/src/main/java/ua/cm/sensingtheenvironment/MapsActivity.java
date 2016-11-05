@@ -16,6 +16,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import ua.cm.sensingtheenvironment.database.Reading;
+
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -63,6 +65,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Intent intent;
         switch (item.getItemId()) {
             // action with ID action_refresh was selected
             case R.id.add_sensor:
@@ -71,7 +74,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 break;
             // action with ID action_settings was selected
             case R.id.list_sensors:
-                Intent intent = new Intent(this, SensorListActivity.class);
+                intent = new Intent(this, SensorListActivity.class);
+                startActivity(intent);
+                break;
+            case R.id.list_readings:
+                intent = new Intent(this, ReadingListActivity.class);
                 startActivity(intent);
                 break;
             default:
