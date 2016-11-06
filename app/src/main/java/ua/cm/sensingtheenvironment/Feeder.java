@@ -1,9 +1,11 @@
 package ua.cm.sensingtheenvironment;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -91,6 +93,19 @@ public class Feeder extends AppCompatActivity
                 intent = new Intent(this, ReadingListActivity.class);
                 startActivity(intent);
                 break;
+            case R.id.nav_delete:
+                // TODO MOVE TO SETTINGS ACTIVITY
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.warning)
+                        .setMessage(R.string.onfirmation_delete_sensors)
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                Toast.makeText(Feeder.this, R.string.success_delete_sensors, Toast.LENGTH_SHORT).show();
+                                //TODO DELETE QUERY
+                            }})
+                        .setNegativeButton(android.R.string.no, null).show();
             default:
                 break;
         }
