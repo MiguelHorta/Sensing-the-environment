@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_map"
+            android:icon="@drawable/ic_map"
+            android:title="Map" />
+        <item
+            android:id="@+id/nav_list_sensors"
+            android:icon="@drawable/ic_sensors"
+            android:title="@string/list_sensors" />
+        <item
+            android:id="@+id/nav_list_readings"
+            android:icon="@android:drawable/ic_menu_share"
+            android:title="@string/list_readings" />
+
+        <item
+            android:id="@+id/nav_delete"
+            android:icon="@android:drawable/ic_delete"
+            android:title="@string/delete_all_sensors" />
+    </group>
+
+    <item android:title="Information">
+        <menu>
+            <item
+                android:id="@+id/nav_contact"
+                android:icon="@drawable/ic_info"
+                android:title="@string/contacts" />
+
+        </menu>
+    </item>
+
+</menu>

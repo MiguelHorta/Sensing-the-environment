@@ -45,16 +45,11 @@
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps"
             android:theme="@style/AppTheme.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".SensorListActivity"
             android:label="@string/title_sensor_list"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".SensorDetailActivity"
             android:label="@string/title_sensor_detail"
@@ -67,7 +62,7 @@
         <activity
             android:name=".ReadingListActivity"
             android:label="@string/title_reading_list"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".ReadingDetailActivity"
             android:label="@string/title_reading_detail"
@@ -76,6 +71,16 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="ua.cm.sensingtheenvironment.ReadingListActivity" />
+        </activity>
+        <activity
+            android:name=".Feeder"
+            android:label="@string/title_activity_feeder"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
     </application>
 
