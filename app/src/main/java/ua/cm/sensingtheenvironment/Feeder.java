@@ -1,8 +1,17 @@
 package ua.cm.sensingtheenvironment;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Debug;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
@@ -17,8 +26,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Feeder extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+    Messenger networkService = null;
+    final Messenger messenger = new Messenger(new IncomingHandler());
+    private static Logger log = Logger.getLogger("SenseTheEnv");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +50,10 @@ public class Feeder extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        Intent i = new Intent(this, Background.class);
+        startService(i);
+        bindService(i, networkServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -95,6 +114,7 @@ public class Feeder extends AppCompatActivity
                 break;
             case R.id.nav_delete:
                 // TODO MOVE TO SETTINGS ACTIVITY
+                // CREDITS http://stackoverflow.com/a/5127506
                 new AlertDialog.Builder(this)
                         .setTitle(R.string.warning)
                         .setMessage(R.string.onfirmation_delete_sensors)
@@ -113,5 +133,35 @@ public class Feeder extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private ServiceConnection networkServiceConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            networkService = new Messenger(service);
+            try {
+                Message msg = Message.obtain(null, Background.MSG_REGISTER_CLIENT);
+                msg.replyTo = messenger;
+                networkService.send(msg);
+                log.log(Level.INFO, "Connected to service");
+            } catch (RemoteException e) {
+                // Here, the service has crashed even before we were able to connect
+            }
+        }
+        public void onServiceDisconnected(ComponentName className) {
+            networkService = null;
+            log.log(Level.INFO, "Disconnected from service");
+        }
+    };
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case Background.SENSOR_INFO:
+                    // do something here
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
     }
 }

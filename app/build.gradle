@@ -5,7 +5,7 @@ android {
     buildToolsVersion "24.0.3"
     defaultConfig {
         applicationId "ua.cm.sensingtheenvironment"
-        minSdkVersion 15
+        minSdkVersion 19
         targetSdkVersion 24
         multiDexEnabled true  // this line will solve this problem
         versionCode 1
@@ -31,5 +31,6 @@ dependencies {
     compile 'com.android.support:support-v4:24.2.1'
     compile 'com.android.support:recyclerview-v7:24.2.1'
     compile 'com.android.support:design:24.2.1'
+    compile 'com.github.miguelhorta:Bluetooth-Library:master-SNAPSHOT'
     testCompile 'junit:junit:4.12'
 }

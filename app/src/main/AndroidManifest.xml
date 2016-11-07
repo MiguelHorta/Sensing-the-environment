@@ -44,8 +44,7 @@
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps"
-            android:theme="@style/AppTheme.NoActionBar">
-        </activity>
+            android:theme="@style/AppTheme.NoActionBar"></activity>
         <activity
             android:name=".SensorListActivity"
             android:label="@string/title_sensor_list"
@@ -82,6 +81,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".Background"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
