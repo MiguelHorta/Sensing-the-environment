@@ -8,7 +8,7 @@
     <string name="title_reading_list">Readings</string>
     <string name="title_reading_detail">Reading Detail</string>
     <string name="list_readings">All Readings</string>
-    <string name="title_activity_feeder">Feeder</string>
+    <string name="title_activity_feeder">Feed</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
@@ -17,6 +17,6 @@
     <string name="delete_all_sensors">Delete all sensors</string>
     <string name="contacts">Contacts</string>
     <string name="warning">Warning</string>
-    <string name="onfirmation_delete_sensors">Are you sure you want to reset the known sensors database?</string>
+    <string name="confirmation_delete_sensors">Are you sure you want to reset the known sensors database?</string>
     <string name="success_delete_sensors">All known sensors deleted.</string>
 </resources>

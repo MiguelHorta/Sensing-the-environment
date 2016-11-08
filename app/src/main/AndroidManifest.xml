@@ -73,7 +73,7 @@
                 android:value="ua.cm.sensingtheenvironment.ReadingListActivity" />
         </activity>
         <activity
-            android:name=".Feeder"
+            android:name=".Feed"
             android:label="@string/title_activity_feeder"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>

@@ -54,4 +54,12 @@ public class Sensor extends SugarRecord {
     public String getDesc() {
         return description;
     }
+
+    public double getLatitude() {
+        return localizationLatitude;
+    }
+
+    public double getLongitude() {
+        return localizationLongitude;
+    }
 }

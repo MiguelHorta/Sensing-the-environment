@@ -45,8 +45,8 @@ public class ReadingDetailActivity extends AppCompatActivity {
             // Create the detail fragment and add it to the activity
             // using a fragment transaction.
             Bundle arguments = new Bundle();
-            arguments.putString(ReadingDetailFragment.ARG_ITEM_ID,
-                    getIntent().getStringExtra(ReadingDetailFragment.ARG_ITEM_ID));
+            arguments.putLong(ReadingDetailFragment.ARG_ITEM_ID,
+                    getIntent().getLongExtra(ReadingDetailFragment.ARG_ITEM_ID, 1));
             ReadingDetailFragment fragment = new ReadingDetailFragment();
             fragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction()

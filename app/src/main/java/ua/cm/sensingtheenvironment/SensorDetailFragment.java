@@ -7,7 +7,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.StreetViewPanoramaCamera;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import ua.cm.sensingtheenvironment.database.Sensor;
 
@@ -17,7 +26,9 @@ import ua.cm.sensingtheenvironment.database.Sensor;
  * in two-pane mode (on tablets) or a {@link SensorDetailActivity}
  * on handsets.
  */
-public class SensorDetailFragment extends Fragment {
+
+public class SensorDetailFragment extends Fragment implements OnMapReadyCallback {
+    private static Logger log = Logger.getLogger("SenseTheEnv");
     /**
      * The fragment argument representing the item ID that this fragment
      * represents.
@@ -41,6 +52,7 @@ public class SensorDetailFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         mItem = Sensor.findById(Sensor.class, getArguments().getLong(ARG_ITEM_ID));
+        log.log(Level.INFO, String.format("%s", getArguments().getLong(ARG_ITEM_ID)));
         if (getArguments().containsKey(ARG_ITEM_ID)) {
             // Load the dummy content specified by the fragment
             // arguments. In a real-world scenario, use a Loader
@@ -62,9 +74,20 @@ public class SensorDetailFragment extends Fragment {
             ((TextView) rootView.findViewById(R.id.given_name_content)).setText(mItem.getGivenName());
             ((TextView) rootView.findViewById(R.id.mac_content)).setText(mItem.getMAC());
             ((TextView) rootView.findViewById(R.id.desc_content)).setText(mItem.getDesc());
-            ((MapView) rootView.findViewById(R.id.last_loc_content)).
+            SupportMapFragment mapFragment = (SupportMapFragment) this.getChildFragmentManager()
+                    .findFragmentById(R.id.last_loc_content);
+            mapFragment.getMapAsync(this);
         }
 
         return rootView;
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+
+        // Add a marker in Sydney and move the camera
+        LatLng marker = new LatLng(mItem.getLatitude(), mItem.getLongitude());
+        googleMap.addMarker(new MarkerOptions().position(marker).title("Last Seen " +mItem.getGivenName()));
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(marker,15));
     }
 }

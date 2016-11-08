@@ -14,42 +14,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" >
-
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:text="TextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/given_name_content"
-                android:textSize="18sp"
-                android:textStyle="normal|bold"
-                android:textAlignment="center" />
-
-            <TextView
-                android:text="TextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/mac_content"
-                android:textSize="12sp" />
-
-            <TextView
-                android:text="TextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/desc_content"
-                android:textStyle="normal|italic"
-                android:textSize="12sp"
-                android:textColor="@color/cast_expanded_controller_seek_bar_progress_background_tint_color" />
-
-            <com.google.android.gms.maps.MapView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/last_loc_content" />
-        </LinearLayout>
     </android.support.v4.widget.NestedScrollView>
 
 </android.support.design.widget.CoordinatorLayout>

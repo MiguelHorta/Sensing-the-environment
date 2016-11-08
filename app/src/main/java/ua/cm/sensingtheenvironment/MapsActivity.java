@@ -49,8 +49,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap = googleMap;
 
         // Add a marker in Sydney and move the camera
-        LatLng deti_ua = new LatLng(40.6331763,-8.6587288);
-        mMap.addMarker(new MarkerOptions().position(deti_ua).title("Wot?"));
+        LatLng deti_ua = new LatLng(40.6332877,-8.6599251);
+        mMap.addMarker(new MarkerOptions().position(deti_ua).title("DETI Aq"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(deti_ua,15));
     }
 }
