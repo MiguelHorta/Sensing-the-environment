@@ -7,6 +7,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.MapView;
+
 import ua.cm.sensingtheenvironment.database.Sensor;
 
 /**
@@ -57,7 +59,10 @@ public class SensorDetailFragment extends Fragment {
 
         // Show the dummy content as text in a TextView.
         if (mItem != null) {
-            ((TextView) rootView.findViewById(R.id.sensor_detail)).setText(mItem.getMAC());
+            ((TextView) rootView.findViewById(R.id.given_name_content)).setText(mItem.getGivenName());
+            ((TextView) rootView.findViewById(R.id.mac_content)).setText(mItem.getMAC());
+            ((TextView) rootView.findViewById(R.id.desc_content)).setText(mItem.getDesc());
+            ((MapView) rootView.findViewById(R.id.last_loc_content)).
         }
 
         return rootView;

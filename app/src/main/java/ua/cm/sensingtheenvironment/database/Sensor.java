@@ -50,4 +50,8 @@ public class Sensor extends SugarRecord {
         }
         return mac;
     }
+
+    public String getDesc() {
+        return description;
+    }
 }
