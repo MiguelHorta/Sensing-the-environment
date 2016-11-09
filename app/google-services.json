@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "618192421123",
+    "firebase_url": "https://sensing-the-environment.firebaseio.com",
+    "project_id": "sensing-the-environment",
+    "storage_bucket": "sensing-the-environment.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618192421123:android:26771141d3e69126",
+        "android_client_info": {
+          "package_name": "ua.cm.sensingtheenvironment"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "618192421123-kdn1e7q92p4k6282nuki9indn0n23kop.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ua.cm.sensingtheenvironment",
+            "certificate_hash": "F08E7062F233C2B4B7060B8920D535FA50664A08"
+          }
+        },
+        {
+          "client_id": "618192421123-v2q6pmr0udds6kqgsi4b9nhj00k535hk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ua.cm.sensingtheenvironment",
+            "certificate_hash": "C3BEDCF94E0BF5827B51024C2E75D0A735A0BC2E"
+          }
+        },
+        {
+          "client_id": "618192421123-0d3n0rkrhlot08278n72mli4vngsf985.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoV_IngGzDMxtztOpOVarkCsTL76eB91g"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "618192421123-0d3n0rkrhlot08278n72mli4vngsf985.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
