@@ -14,8 +14,10 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.ListViewAutoScrollHelper;
 import android.support.v7.app.AlertDialog;
 
 import android.support.design.widget.NavigationView;
@@ -23,26 +25,42 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import ua.cm.sensingtheenvironment.database.Sensor;
 
 public class Feed extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     Messenger networkService = null;
     final Messenger messenger = new Messenger(new IncomingHandler());
-    private static Logger log = Logger.getLogger("SenseTheEnv");
     private final int REQUEST_ACCESS_COARSE_LOCATION = 0x00;
+
+    private ArrayList<Event> mEventList= new ArrayList<>();
+    AdapterEvent adapter;
+
+    private static Logger log = Logger.getLogger("SenseTheEnv");
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_feeder);
+        setContentView(R.layout.activity_feed);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -66,6 +84,12 @@ public class Feed extends AppCompatActivity
                     break;
             }
         }
+
+        ListView mEventView = (ListView)findViewById(R.id.event_list);
+        adapter = new AdapterEvent(this, R.layout.content_feed_item , mEventList);
+        mEventView.setAdapter(adapter);
+
+
         Intent i = new Intent(this, Background.class);
         startService(i);
         bindService(i, networkServiceConnection, Context.BIND_AUTO_CREATE);
@@ -175,9 +199,88 @@ public class Feed extends AppCompatActivity
                     // do something here
                     break;
                 case Background.NEW_SENSOR:
+                    Sensor s = (Sensor)msg.obj;
+                    if(Sensor.find(Sensor.class, " mac = ?", s.getMAC()).size() <= 0) {
+                        mEventList.add(0, new Event(Background.NEW_SENSOR, s));
+                        adapter.notifyDataSetChanged();
+                    }
                 default:
                     super.handleMessage(msg);
             }
         }
+    }
+
+    private class AdapterEvent extends ArrayAdapter<Event> {
+        public AdapterEvent(Context context, int resource, List<Event> objects) {
+            super(context, resource, objects);
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            try {
+                Event item = getItem(position);
+                View v = null;
+                if (convertView == null) {
+                    LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+                    v = inflater.inflate(R.layout.content_feed_item, null);
+
+                } else {
+                    v = convertView;
+                }
+
+                TextView mEventTitle = (TextView) v.findViewById(R.id.event_title);
+                TextView mEventDesc = (TextView) v.findViewById(R.id.event_desc);
+
+                mEventTitle.setText(item.getTitle());
+                mEventDesc.setText(item.getDesc());
+
+                return v;
+            } catch (Exception ex) {
+                log.log(Level.INFO, "Error populating feed list");
+                return convertView;
+            }
+        }
+    }
+
+    private class Event {
+        public Event(int event_type, Object ob) {
+            this.event_type = event_type;
+            this.obj = ob;
+        }
+
+        public int getEvent_type() {
+            return event_type;
+        }
+
+        public Object getObj() {
+            return obj;
+        }
+
+        public String getTitle()
+        {
+            switch (event_type)
+            {
+                case Background.NEW_SENSOR:
+                    return ((Sensor)obj).getGivenName();
+                default:
+                    return "Default";
+            }
+        }
+        public String getDesc()
+        {
+            switch (event_type)
+            {
+                case Background.NEW_SENSOR:
+                    Sensor s = ((Sensor)obj);
+                    return s.getMAC();
+                default:
+                    return "Default";
+            }
+        }
+
+        private int event_type;
+        private Object obj;
     }
 }

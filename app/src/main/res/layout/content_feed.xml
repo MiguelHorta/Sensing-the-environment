@@ -7,10 +7,14 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="ua.cm.sensingtheenvironment.Feed"
-    tools:showIn="@layout/app_bar_feeder">
+    tools:showIn="@layout/app_bar_feed">
 
-    <ListView
-        android:id="@+id/list_feeder"
+    <ListView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/event_list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        tools:context="ua.cm.sensingtheenvironment.Feed"
+        tools:listitem="@layout/content_feed_item" />
 </RelativeLayout>

@@ -8,6 +8,7 @@ import android.os.IBinder;
 import android.content.Context;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.RemoteException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import me.aflak.bluetooth.Bluetooth;
+import ua.cm.sensingtheenvironment.database.Sensor;
 
 // CREDITS http://stackoverflow.com/a/6592308
 public class Background extends Service {
@@ -56,6 +58,18 @@ public class Background extends Service {
             }
             public void onDevice(BluetoothDevice device) {
                 log.log(Level.WARNING, "Found device: " + device.getName());
+                for(Messenger client : clients) {
+                    try {
+                        Message msg = Message.obtain(null, NEW_SENSOR);
+                        Sensor s = new Sensor(device.getAddress(), 0, 0, device.getName() , "");
+                        msg.obj = s;
+                        client.send(msg);
+                    } catch (RemoteException e) {
+                        // If we get here, the client is dead, and we should remove it from the list
+                        log.log(Level.INFO, "Removing client: " + client);
+                        clients.remove(client);
+                    }
+                }
             }
             @Override
             public void onPair(BluetoothDevice device) {
