@@ -8,6 +8,9 @@
          location permissions for the 'MyLocation' functionality.
     -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
     <application
         android:name="com.orm.SugarApp"
@@ -72,7 +75,7 @@
                 android:value="ua.cm.sensingtheenvironment.ReadingListActivity" />
         </activity>
         <activity
-            android:name=".Feeder"
+            android:name=".Feed"
             android:label="@string/title_activity_feeder"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -85,7 +88,8 @@
         <service
             android:name=".Background"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true">
+        </service>
     </application>
 
 </manifest>

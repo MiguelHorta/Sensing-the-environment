@@ -11,6 +11,8 @@ import android.os.Messenger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,8 +22,12 @@ import me.aflak.bluetooth.Bluetooth;
 public class Background extends Service {
     private static Logger log = Logger.getLogger("SenseTheEnv");
 
+    Timer timer;
+    SearcherTask searchTask;
+
     public static final int MSG_REGISTER_CLIENT = 0x00;
-    public static final int SENSOR_INFO = 0x10;
+    public static final int NEW_SENSOR = 0x10;
+    public static final int SENSOR_INFO = 0x11;
     // NOTE Might be overkill
     ArrayList<Messenger> clients = new ArrayList<Messenger>();
     // Target we publish for clients to send messages to
@@ -36,45 +42,37 @@ public class Background extends Service {
     {
         bluetooth = new Bluetooth(this);
         bluetooth.enableBluetooth();
+        timer = new Timer();
+        searchTask= new SearcherTask();
+
+        //delay 1s, repeat in 30s
+        timer.schedule(searchTask, 1000, 30*1000);
+
         bluetooth.setDiscoveryCallback(new Bluetooth.DiscoveryCallback() {
 
             @Override
             public void onFinish() {
-                // scan finished
+                log.log(Level.WARNING, "Scan finished");
             }
-            @Override
             public void onDevice(BluetoothDevice device) {
-                // device found
+                log.log(Level.WARNING, "Found device: " + device.getName());
             }
             @Override
             public void onPair(BluetoothDevice device) {
-                // device paired
+                log.log(Level.WARNING, "PAIRED: "+ device.getName());
             }
             @Override
             public void onUnpair(BluetoothDevice device) {
-                // device unpaired
+                log.log(Level.WARNING, "UNPAIRED: "+ device.getName());
             }
             @Override
             public void onError(String message) {
-                // error occurred
+                log.log(Level.WARNING, "ERROR: "+ message);
             }
         });
     }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // CREDITS http://stackoverflow.com/a/28062885
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-
-            @Override
-            public void run() {
-                log.log(Level.INFO, "--> UPDATED\n");
-                List<BluetoothDevice> devices = bluetooth.getPairedDevices();
-                for (BluetoothDevice device: devices) {
-                    bluetooth.send("UPDATE\n");
-                }
-            }
-        }, 60*5*1000);
 
         return START_NOT_STICKY;
     }
@@ -97,6 +95,13 @@ public class Background extends Service {
                     super.handleMessage(msg);
                     break;
             }
+        }
+    }
+
+    private class SearcherTask extends TimerTask{
+        @Override
+        public void run() {
+            bluetooth.scanDevices();
         }
     }
 }
