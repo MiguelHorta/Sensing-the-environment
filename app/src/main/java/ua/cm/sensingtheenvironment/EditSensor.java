@@ -20,8 +20,8 @@ public class EditSensor extends AppCompatActivity {
     private static Logger log = Logger.getLogger("SenseTheEnv");
     public static final String ARG_LATITUDE = "lat";
     public static final String ARG_LONGITUDE = "lng";
-//    public static final String ARG_MAC = "mac";
-//    public static final String ARG_NAME = "name";
+    public static final String ARG_MAC = "mac";
+    public static final String ARG_NAME = "name";
 //    public static final String ARG_DESCRIPTION = "desc";
     public static final String ARG_SENSOR_ID = "id";
 
@@ -41,6 +41,8 @@ public class EditSensor extends AppCompatActivity {
         if(extras != null ) {
             ((EditText)findViewById(R.id.latitude_edit)).setText(extras.getString(ARG_LATITUDE, "0"));
             ((EditText)findViewById(R.id.longitude_edit)).setText(extras.getString(ARG_LONGITUDE, "0"));
+            ((EditText)findViewById(R.id.mac_address_edit)).setText(extras.getString(ARG_MAC, "00:00:00:00:00:00"));
+            ((EditText)findViewById(R.id.sensor_name_edit)).setText(extras.getString(ARG_NAME, getString(R.string.unnamed)));
             if (extras.containsKey(ARG_SENSOR_ID)) {
                 s = Sensor.findById(Sensor.class, extras.getLong(ARG_SENSOR_ID));
                 ((EditText)findViewById(R.id.sensor_name_edit)).setText(s.getGivenName());

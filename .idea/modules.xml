@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Sensing-the-environment.iml" filepath="$PROJECT_DIR$/Sensing-the-environment.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Sensingtheenvironment.iml" filepath="$PROJECT_DIR$/Sensingtheenvironment.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

@@ -225,7 +225,7 @@ public class Feed extends AppCompatActivity
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             try {
-                Event item = getItem(position);
+                final Event item = getItem(position);
                 View v = null;
                 if (convertView == null) {
                     LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -241,13 +241,24 @@ public class Feed extends AppCompatActivity
 
                 mEventTitle.setText(item.getTitle());
                 mEventDesc.setText(item.getDesc());
-
+                v.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent i = new Intent(Feed.this, EditSensor.class);
+                        i.putExtra(EditSensor.ARG_LATITUDE, 0);
+                        i.putExtra(EditSensor.ARG_LONGITUDE, 0);
+                        i.putExtra(EditSensor.ARG_NAME, item.getTitle());
+                        i.putExtra(EditSensor.ARG_MAC, item.getDesc());
+                        startActivity(i);
+                    }
+                });
                 return v;
             } catch (Exception ex) {
                 log.log(Level.INFO, "Error populating feed list");
                 return convertView;
             }
         }
+
     }
 
     private class Event {
