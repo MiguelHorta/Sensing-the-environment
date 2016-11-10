@@ -62,4 +62,12 @@ public class Sensor extends SugarRecord {
     public double getLongitude() {
         return localizationLongitude;
     }
+    // TODO It ought to exist a better way
+    public void rePopulate(String mac, double localizationLatitude, double localizationLongitude, String givenName, String description) {
+        this.mac = mac;
+        this.localizationLatitude = localizationLatitude;
+        this.localizationLongitude = localizationLongitude;
+        this.givenName = givenName;
+        this.description = description;
+    }
 }

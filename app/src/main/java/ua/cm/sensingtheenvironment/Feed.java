@@ -17,7 +17,6 @@ import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.widget.ListViewAutoScrollHelper;
 import android.support.v7.app.AlertDialog;
 
 import android.support.design.widget.NavigationView;
@@ -25,7 +24,6 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -96,6 +94,12 @@ public class Feed extends AppCompatActivity
     }
 
     @Override
+    protected void onResume() {
+        adapter.notifyDataSetChanged();
+        super.onResume();
+    }
+
+    @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
@@ -108,7 +112,7 @@ public class Feed extends AppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.feeder, menu);
+        getMenuInflater().inflate(R.menu.feed, menu);
         return true;
     }
 
@@ -121,8 +125,10 @@ public class Feed extends AppCompatActivity
         switch (item.getItemId()) {
             // action with ID action_refresh was selected
             case R.id.add_sensor:
-                Toast.makeText(this, "¡¡NOT IMPLEMENTED!!", Toast.LENGTH_SHORT)
-                        .show();
+                Intent i = new Intent(this, EditSensor.class);
+                i.putExtra(EditSensor.ARG_LATITUDE, 0);
+                i.putExtra(EditSensor.ARG_LONGITUDE, 0);
+                startActivity(i);
                 break;
             default:
                 break;

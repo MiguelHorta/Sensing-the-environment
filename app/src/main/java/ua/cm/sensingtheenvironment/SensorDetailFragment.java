@@ -1,7 +1,12 @@
 package ua.cm.sensingtheenvironment;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,7 +44,6 @@ public class SensorDetailFragment extends Fragment implements OnMapReadyCallback
      * The content this fragment is presenting.
      */
     private Sensor mItem;
-
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
@@ -62,6 +66,7 @@ public class SensorDetailFragment extends Fragment implements OnMapReadyCallback
             //Toolbar toolbar = (Toolbar) activity.findViewById(R.id.toolbar);
             //activity.setSupportActionBar(toolbar);
         }
+
     }
 
     @Override
@@ -78,7 +83,16 @@ public class SensorDetailFragment extends Fragment implements OnMapReadyCallback
                     .findFragmentById(R.id.last_loc_content);
             mapFragment.getMapAsync(this);
         }
-
+        FloatingActionButton fab = (FloatingActionButton) rootView.findViewById(R.id.sensor_detail_edit);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent i = new Intent(getActivity(), EditSensor.class);
+                i.putExtra(EditSensor.ARG_SENSOR_ID, getArguments().getLong(ARG_ITEM_ID));
+                startActivity(i);
+                getActivity().finish();
+            }
+        });
         return rootView;
     }
 
@@ -90,4 +104,6 @@ public class SensorDetailFragment extends Fragment implements OnMapReadyCallback
         googleMap.addMarker(new MarkerOptions().position(marker).title("Last Seen " +mItem.getGivenName()));
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(marker,15));
     }
+
+
 }

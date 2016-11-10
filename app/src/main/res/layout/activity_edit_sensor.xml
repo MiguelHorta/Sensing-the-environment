@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <android.support.v7.widget.Toolbar
+    android:id="@+id/edit_sensor_toolbar"
+    android:minHeight="?attr/actionBarSize"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    app:titleTextColor="@android:color/white"
+    android:background="?attr/colorPrimary" />
+    <RelativeLayout
+        android:id="@+id/activity_edit_sensor"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        tools:context="ua.cm.sensingtheenvironment.EditSensor">
+
+        <TextView
+            android:text="@string/sensor_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/sensor_name_label"
+            android:textSize="18sp"
+            android:layout_alignBaseline="@+id/sensor_name_edit"
+            android:layout_alignBottom="@+id/sensor_name_edit"
+            android:layout_toStartOf="@+id/sensor_name_edit"
+            android:layout_marginEnd="13dp" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:text="@android:string/unknownName"
+            android:ems="10"
+            android:id="@+id/sensor_name_edit"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true" />
+
+        <TextView
+            android:text="@string/latitude"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/latitude_label"
+            android:layout_below="@+id/sensor_name_edit"
+            android:layout_alignEnd="@+id/sensor_name_label"
+            android:layout_marginTop="28dp"
+            android:textSize="18sp" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="numberSigned|numberDecimal"
+            android:ems="10"
+            android:id="@+id/latitude_edit"
+            android:layout_alignBaseline="@+id/latitude_label"
+            android:layout_alignBottom="@+id/latitude_label"
+            android:layout_alignParentEnd="true"
+            android:text="0" />
+
+        <TextView
+            android:text="@string/longitude"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/longitude_label"
+            android:layout_below="@+id/latitude_edit"
+            android:layout_alignEnd="@+id/latitude_label"
+            android:layout_marginTop="28dp"
+            android:textSize="18sp" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="numberSigned|numberDecimal"
+            android:ems="10"
+            android:id="@+id/longitude_edit"
+            android:layout_alignBaseline="@+id/longitude_label"
+            android:layout_alignBottom="@+id/longitude_label"
+            android:layout_alignParentEnd="true"
+            android:text="0" />
+
+        <TextView
+            android:text="@string/mac_address"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/mac_address_label"
+            android:layout_below="@+id/longitude_edit"
+            android:layout_alignEnd="@+id/latitude_label"
+            android:layout_marginTop="28dp"
+            android:textSize="18sp" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:text="00-00-00-00-00"
+            android:ems="10"
+            android:id="@+id/mac_address_edit"
+            android:layout_alignBaseline="@+id/mac_address_label"
+            android:layout_alignBottom="@+id/mac_address_label"
+            android:layout_alignParentEnd="true" />
+
+        <TextView
+            android:text="@string/description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/description_label"
+            android:layout_below="@+id/mac_address_edit"
+            android:layout_alignStart="@+id/sensor_name_label"
+            android:layout_marginTop="17dp"
+            android:textSize="18sp" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textMultiLine"
+            android:ems="10"
+            android:layout_below="@+id/description_label"
+            android:layout_alignStart="@+id/description_label"
+            android:layout_marginTop="15dp"
+            android:id="@+id/description_edit"
+            android:minLines="3" />
+    </RelativeLayout>
+</LinearLayout>

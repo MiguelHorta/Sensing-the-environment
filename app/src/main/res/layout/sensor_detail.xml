@@ -1,8 +1,11 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:weightSum="1">
 
     <TextView
         android:text="TextView"
@@ -34,13 +37,16 @@
         android:id="@+id/last_loc_content"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
-        android:layout_height="268dp"
-        tools:context="ua.cm.sensingtheenvironment.SensorDetailActivity" />
+        tools:context="ua.cm.sensingtheenvironment.SensorDetailActivity"
+        android:layout_height="300dp" />
 
-    <Button
-        android:text="Edit"
-        android:layout_width="match_parent"
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/sensor_detail_edit"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/button2" />
+        android:layout_gravity="bottom|right"
+        android:layout_margin="16dp"
+        app:layout_anchorGravity="bottom|right|end"
+        app:srcCompat="@android:drawable/ic_menu_edit" />
 
 </LinearLayout>

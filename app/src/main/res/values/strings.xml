@@ -5,6 +5,12 @@
     <string name="title_sensor_detail">Sensor Detail</string>
     <string name="add_sensor">Add Sensor</string>
     <string name="list_sensors">All Sensors</string>
+    <string name="sensor_name">Sensor name:</string>
+    <string name="latitude">Latitude:</string>
+    <string name="longitude">Longitude:</string>
+    <string name="mac_address">MAC:</string>
+    <string name="description">Description:</string>
+
     <string name="title_reading_list">Readings</string>
     <string name="title_reading_detail">Reading Detail</string>
     <string name="list_readings">All Readings</string>
@@ -19,4 +25,6 @@
     <string name="warning">Warning</string>
     <string name="confirmation_delete_sensors">Are you sure you want to reset the known sensors database?</string>
     <string name="success_delete_sensors">All known sensors deleted.</string>
+    <string name="unnamed">Unnamed</string>
+    <string name="save">Save</string>
 </resources>

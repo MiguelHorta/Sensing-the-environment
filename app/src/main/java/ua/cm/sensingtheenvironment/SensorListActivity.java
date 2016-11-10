@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -48,6 +49,12 @@ public class SensorListActivity extends AppCompatActivity {
         assert recyclerView != null;
         setupRecyclerView((RecyclerView) recyclerView);
 
+        // Show the Up button in the action bar.
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
         if (findViewById(R.id.sensor_detail_container) != null) {
             // The detail container view will be present only in the
             // large-screen layouts (res/values-w900dp).
@@ -56,7 +63,13 @@ public class SensorListActivity extends AppCompatActivity {
             mTwoPane = true;
         }
     }
-
+    @Override
+    protected void onResume() {
+        View recyclerView = findViewById(R.id.sensor_list);
+        assert recyclerView != null;
+        setupRecyclerView((RecyclerView) recyclerView);
+        super.onResume();
+    }
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
         List<Sensor> sensors =  Sensor.listAll(Sensor.class);
         recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(sensors));
