@@ -27,4 +27,10 @@
     <string name="success_delete_sensors">All known sensors deleted.</string>
     <string name="unnamed">Unnamed</string>
     <string name="save">Save</string>
+    <string name="click_to_connect">Click to connect</string>
+    <string name="click_to_request">Click to get info</string>
+    <string name="near_sensor">Near sensor:</string>
+    <string name="found_device">Found new device:</string>
+    <string name="new_info">Send new data:</string>
+    <string name="click_to_details">Click to details</string>
 </resources>

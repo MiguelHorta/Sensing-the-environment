@@ -202,14 +202,15 @@ public class Feed extends AppCompatActivity
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case Background.SENSOR_INFO:
-                    // do something here
+                    mEventList.add(0, new Event(Background.SENSOR_INFO, msg.obj));
+                    adapter.notifyDataSetChanged();
                     break;
                 case Background.NEW_SENSOR:
-                    Sensor s = (Sensor)msg.obj;
-                    if(Sensor.find(Sensor.class, " mac = ?", s.getMAC()).size() <= 0) {
-                        mEventList.add(0, new Event(Background.NEW_SENSOR, s));
-                        adapter.notifyDataSetChanged();
-                    }
+                    mEventList.add(0, new Event(Background.NEW_SENSOR, msg.obj));
+                    adapter.notifyDataSetChanged();
+                case Background.NEAR_SENSOR:
+                    mEventList.add(0, new Event(Background.NEAR_SENSOR, msg.obj));
+                    adapter.notifyDataSetChanged();
                 default:
                     super.handleMessage(msg);
             }
@@ -238,18 +239,34 @@ public class Feed extends AppCompatActivity
 
                 TextView mEventTitle = (TextView) v.findViewById(R.id.event_title);
                 TextView mEventDesc = (TextView) v.findViewById(R.id.event_desc);
+                TextView mEventAction = (TextView) v.findViewById(R.id.event_action);
 
-                mEventTitle.setText(item.getTitle());
+                mEventTitle.setText(item.getEvent() + " " + item.getTitle());
                 mEventDesc.setText(item.getDesc());
+                mEventAction.setText(item.getAction());
                 v.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Intent i = new Intent(Feed.this, EditSensor.class);
-                        i.putExtra(EditSensor.ARG_LATITUDE, 0);
-                        i.putExtra(EditSensor.ARG_LONGITUDE, 0);
-                        i.putExtra(EditSensor.ARG_NAME, item.getTitle());
-                        i.putExtra(EditSensor.ARG_MAC, item.getDesc());
-                        startActivity(i);
+                        switch (item.event_type) {
+                            case Background.NEW_SENSOR:
+                                Intent i = new Intent(Feed.this, EditSensor.class);
+                                i.putExtra(EditSensor.ARG_LATITUDE, 0);
+                                i.putExtra(EditSensor.ARG_LONGITUDE, 0);
+                                i.putExtra(EditSensor.ARG_NAME, item.getTitle());
+                                i.putExtra(EditSensor.ARG_MAC, item.getDesc());
+                                startActivity(i);
+                                break;
+                            case Background.NEAR_SENSOR:
+                                try {
+                                    Message msg = Message.obtain(null, Background.REQ_SENSOR_INFO);
+                                    // TODO getDesc shouldn't be used like this
+                                    msg.obj = item.getDesc();
+                                    networkService.send(msg);
+                                } catch (RemoteException e) {
+                                   // Here, the service has crashed even before we were able to connect
+                                }
+                            break;
+                        }
                     }
                 });
                 return v;
@@ -279,6 +296,8 @@ public class Feed extends AppCompatActivity
         {
             switch (event_type)
             {
+                case Background.SENSOR_INFO:
+                case Background.NEAR_SENSOR:
                 case Background.NEW_SENSOR:
                     return ((Sensor)obj).getGivenName();
                 default:
@@ -289,6 +308,8 @@ public class Feed extends AppCompatActivity
         {
             switch (event_type)
             {
+                case Background.SENSOR_INFO:
+                case Background.NEAR_SENSOR:
                 case Background.NEW_SENSOR:
                     Sensor s = ((Sensor)obj);
                     return s.getMAC();
@@ -297,7 +318,42 @@ public class Feed extends AppCompatActivity
             }
         }
 
+        public String getAction()
+        {
+            switch (event_type)
+            {
+                case Background.SENSOR_INFO:
+                    return getString(R.string.click_to_details);
+                case Background.NEAR_SENSOR:
+                    return getString(R.string.click_to_request);
+                case Background.NEW_SENSOR:
+                    return getString(R.string.click_to_connect);
+                default:
+                    return "Default";
+            }
+        }
+        public String getEvent()
+        {
+            switch (event_type)
+            {
+                case Background.SENSOR_INFO:
+                    return getString(R.string.new_info);
+                case Background.NEAR_SENSOR:
+                    return getString(R.string.near_sensor);
+                case Background.NEW_SENSOR:
+                    return getString(R.string.found_device);
+                default:
+                    return "Default";
+            }
+        }
+
         private int event_type;
         private Object obj;
+    }
+
+    @Override
+    protected void onDestroy() {
+        unbindService(networkServiceConnection);
+        super.onDestroy();
     }
 }
