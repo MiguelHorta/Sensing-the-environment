@@ -1,38 +1,40 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingBottom="16dp"
-    android:paddingTop="16dp"
-    android:paddingRight="4dp"
-    android:paddingLeft="4dp">
-    <TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:id="@+id/event_title"
+    android:layout_height="match_parent" >
+
+    <TextView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:id="@+id/event_title"
         android:textSize="24sp"
         android:textStyle="normal|bold"
         android:textAlignment="center"
-        android:padding="4dp">
+        android:padding="4dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true">
 
     </TextView>
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <TextView xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:id="@+id/event_desc"
-            android:textSize="12sp"
-            android:textStyle="normal|italic">
 
-        </TextView>
-        <TextView xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:id="@+id/event_action"
-            android:textSize="12sp"
-            android:textStyle="normal|italic">
-        </TextView>
-    </LinearLayout>
-</LinearLayout>
+    <TextView
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:id="@+id/event_desc"
+        android:textSize="12sp"
+        android:textStyle="normal|italic"
+        android:layout_below="@+id/event_title"
+        android:layout_alignParentStart="true"
+        android:layout_alignLeft="@+id/event_title"
+        android:layout_centerInParent="false"
+        android:layout_alignEnd="@+id/event_title">
+
+    </TextView>
+
+    <TextView
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:id="@+id/event_action"
+        android:textSize="12sp"
+        android:textStyle="normal|italic"
+        android:layout_below="@+id/event_desc"
+        android:layout_alignParentStart="true"
+        android:layout_alignEnd="@+id/event_title">
+    </TextView>
+</RelativeLayout>

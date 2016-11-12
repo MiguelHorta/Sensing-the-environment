@@ -12,8 +12,10 @@ import android.text.BoringLayout;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.RunnableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,16 +25,29 @@ import ua.cm.sensingtheenvironment.database.Sensor;
 
 // CREDITS http://stackoverflow.com/a/6592308
 public class Background extends Service {
-    private static Logger log = Logger.getLogger("SenseTheEnv");
+        private static Logger log = Logger.getLogger("SenseTheEnv");
 
-    Timer timer;
-    SearcherTask searchTask;
-
+    Handler scanTimer;
+    Runnable scanAction;
     public static final int MSG_REGISTER_CLIENT = 0x00;
+    public static final int NEXT_SCAN = 0x01;
+    public static final int BEGIN_SCAN = 0x02;
+    public static final int FINISH_SCAN = 0x03;
+    public static final int ATT_CONNECTION = 0x04;
+    public static final int PAIRING = 0x05;
+    public static final int CONNECTED = 0x05;
+    public static final int REQ_SCAN = 0x06;
     public static final int NEW_SENSOR = 0x10;
     public static final int NEAR_SENSOR = 0x11;
     public static final int REQ_SENSOR_INFO = 0x12;
     public static final int SENSOR_INFO = 0x13;
+    public static final int REQ_FAILED = 0x20;
+    public static final int SCAN_FAILED = 0x21;
+    public static final int DISCONNECT = 0x22;
+    public static final int CONNECT_FAILED = 0x23;
+    public static final int INVALID_DATA = 0x24;
+
+
     // NOTE Might be overkill
     ArrayList<Messenger> clients = new ArrayList<Messenger>();
     // Target we publish for clients to send messages to
@@ -40,7 +55,7 @@ public class Background extends Service {
 
     private Bluetooth bluetooth;
     private String pendingReq = "";
-    private int pendingReqAtt = 0;
+    private int pendingReqAtt = 1;
     private Boolean blockScan = false;
 
     public Background() {
@@ -49,39 +64,51 @@ public class Background extends Service {
     @Override
     public void onCreate()
     {
+        log.log(Level.INFO, "Setup: ");
         bluetooth = new Bluetooth(this);
         bluetooth.enableBluetooth();
-        timer = new Timer();
-        searchTask= new SearcherTask();
-
-        //delay 1s, repeat in 30s
-        timer.schedule(searchTask, 1000, 30*1000);
+        scanTimer = new Handler();
+        scanAction = new Runnable() {
+            @Override
+            public void run() {
+                if (pendingReq.isEmpty()) {
+                    sendMessage(BEGIN_SCAN, "", null);
+                    log.log(Level.WARNING, "WE GOTTA SCAN: ");
+                    bluetooth.scanDevices();
+                }
+            }
+        };
+        scanTimer.postDelayed(scanAction, 5000);
 
         bluetooth.setDiscoveryCallback(new Bluetooth.DiscoveryCallback() {
 
             @Override
             public void onFinish() {
                 log.log(Level.WARNING, "Scan finished");
-                if(!pendingReq.isEmpty())
+                if(!pendingReq.isEmpty() && pendingReqAtt < 3 && !blockScan)
                 {
                     pendingReqAtt++;
+                    sendMessage(ATT_CONNECTION, String.format(Locale.getDefault(), "(%s) Searching: %s", pendingReqAtt, pendingReq), null);
                     bluetooth.scanDevices();
+                    return;
                 }
-                if(pendingReqAtt > 3) {
-                    //TODO INFORM THE USER IT FAILED
-                    pendingReq = "";
-                    pendingReqAtt = 0;
-                }
+                else if(pendingReqAtt >= 3 && !blockScan)
+                {
+                    sendMessage(REQ_FAILED, "Can't find device.", null);
+                    restorePeriodicScan();
+                }else if(blockScan)
+                    return;
+                scheduleNewScan();
             }
             public void onDevice(BluetoothDevice device) {
                 log.log(Level.WARNING, "Found device: " + device.getName());
                 if(!pendingReq.isEmpty())
                 {
-                    if(pendingReqAtt < 3 && pendingReq.equals(device.getAddress()))
+                    if(pendingReq.equals(device.getAddress()))
                     {
                         blockScan = true;
-                        if(device.getBondState() == BluetoothDevice.BOND_NONE)
-                        {
+                        if(device.getBondState() == BluetoothDevice.BOND_NONE || device.getBondState() == BluetoothDevice.BOND_BONDING)
+                        { //TODO Verify assumption we can request another pair while state=BONDING
                             log.log(Level.WARNING, "WE GOTTA PAIR: "+ device.getAddress());
                             bluetooth.pair(device); //Assume that we want the data on 1st pair
                             return;
@@ -93,34 +120,15 @@ public class Background extends Service {
                 }
                 List<Sensor> sensors = Sensor.find(Sensor.class, " mac = ?", device.getAddress());
                 if(sensors.size() <= 0) {
-                    for(Messenger client : clients) {
-                        try {
-                            Message msg = Message.obtain(null, NEW_SENSOR);
-                            msg.obj = new Sensor(device.getAddress(), 0, 0, device.getName(), "");
-                            client.send(msg);
-                        } catch (RemoteException e) {
-                            // If we get here, the client is dead, and we should remove it from the list
-                            log.log(Level.INFO, "Removing client: " + client);
-                            clients.remove(client);
-                        }
-                    }
+                    sendMessage(NEW_SENSOR, "", new Sensor(device.getAddress(), 0, 0, device.getName(), ""));
                 }else{
-                    for(Messenger client : clients) {
-                        try {
-                            Message msg = Message.obtain(null, NEAR_SENSOR);
-                            msg.obj = sensors.get(0);
-                            client.send(msg);
-                        } catch (RemoteException e) {
-                            // If we get here, the client is dead, and we should remove it from the list
-                            log.log(Level.INFO, "Removing client: " + client);
-                            clients.remove(client);
-                        }
-                    }
+                    sendMessage(NEAR_SENSOR, "", sensors.get(0));
                 }
             }
             @Override
             public void onPair(BluetoothDevice device) {
                 log.log(Level.WARNING, "PAIRED: "+ device.getName());
+                sendMessage(PAIRING, device.getAddress(), null);
                 bluetooth.connectToDevice(device);
             }
             @Override
@@ -128,68 +136,66 @@ public class Background extends Service {
                 log.log(Level.WARNING, "UNPAIRED: "+ device.getName());
             }
             @Override
-            public void onError(String message) {
-                log.log(Level.WARNING, "ERROR: "+ message);
+            public void onError(String message)
+            {
+                sendMessage(SCAN_FAILED, message, null);
+                restorePeriodicScan();
             }
         });
         bluetooth.setCommunicationCallback(new Bluetooth.CommunicationCallback() {
             @Override
             public void onConnect(BluetoothDevice device) {
                 log.log(Level.WARNING, "WE GOTTA SEND: "+ device.getAddress());
+                sendMessage(CONNECTED, String.format(Locale.getDefault(), "Connected: %s ", device.getAddress()), null);
                 bluetooth.send("{\"GET\": [\"all\"]}\n");
             }
 
             @Override
             public void onDisconnect(BluetoothDevice device, String message) {
-                log.log(Level.WARNING, "WE GOTTA KICK: "+ device.getAddress()+message);
-                pendingReq = "";
-                pendingReqAtt = 0;
-                blockScan = false;
+                sendMessage(DISCONNECT, String.format(Locale.getDefault(), "%s %s", device.getAddress(), message), null);
+                restorePeriodicScan();
             }
 
             @Override
             public void onMessage(String message) {
                 try {
                     Reading.fromJson(message, bluetooth.getDevice().getAddress());
+                    sendMessage(SENSOR_INFO, bluetooth.getDevice().getAddress(), null );
                 }catch (Exception e)
                 {
-                    //TODO inform the user
+                    sendMessage(INVALID_DATA, e.getMessage(), null);
                     return;
+                }finally {
+                    restorePeriodicScan();
                 }
-                for(Messenger client : clients) {
-                    try {
-                        Message msg = Message.obtain(null, SENSOR_INFO);
-                        msg.obj = bluetooth.getDevice().getAddress();
-                        client.send(msg);
-                    } catch (RemoteException e) {
-                        // If we get here, the client is dead, and we should remove it from the list
-                        log.log(Level.INFO, "Removing client: " + client);
-                        clients.remove(client);
-                    }
-                }
-                pendingReq = "";
-                pendingReqAtt = 0;
-                blockScan = false;
             }
 
             @Override
             public void onError(String message) {
-                log.log(Level.WARNING, "ERROR: "+ message);
+                sendMessage(CONNECT_FAILED, message, null);
+                restorePeriodicScan();
             }
 
             @Override
             public void onConnectError(BluetoothDevice device, String message) {
-                log.log(Level.WARNING, "WE GOTTA KICKROUND: "+ device.getAddress()+message);
-                pendingReq = "";
-                pendingReqAtt = 0;
-                blockScan = false;
+                sendMessage(CONNECT_FAILED, String.format(Locale.getDefault(), "%s %s", device.getAddress(), message), null);
+                restorePeriodicScan();
             }
         });
     }
+
+    private void restorePeriodicScan()
+    {
+        pendingReq = "";
+        pendingReqAtt = 1;
+        blockScan = false;
+        scheduleNewScan();
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
 
@@ -208,8 +214,12 @@ public class Background extends Service {
                     break;
                 case REQ_SENSOR_INFO:
                     log.log(Level.WARNING, "REQ: "+ (String)msg.obj);
+                    scanTimer.removeCallbacks(scanAction);
                     Background.this.handleRequestSensor((String)msg.obj);
                     break;
+                case REQ_SCAN:
+                    scheduleNewScan(0);
+                break;
                 default:
                     super.handleMessage(msg);
                     break;
@@ -217,31 +227,80 @@ public class Background extends Service {
         }
     }
 
+    private void sendMessage(int msg_type, String content, Sensor s)
+    { //TODO Overloading may be a better path, this one if string is present will always send the string
+        for(Messenger client : clients) {
+            try {
+                Message msg = Message.obtain(null, msg_type);
+                if(!content.isEmpty())
+                    msg.obj = content;
+                else if(s != null)
+                    msg.obj = s;
+                client.send(msg);
+            } catch (RemoteException e) {
+                // If we get here, the client is dead, and we should remove it from the list
+                log.log(Level.INFO, "Removing client: " + client);
+                clients.remove(client);
+            }
+        }
+    }
     private void handleRequestSensor(String address)
     {
         Background.this.pendingReq = address;
+        sendMessage(ATT_CONNECTION, String.format(Locale.getDefault(), "(%s) Searching: %s", pendingReqAtt, pendingReq), null);
         bluetooth.scanDevices();
     }
-
-    private class SearcherTask extends TimerTask{
-        @Override
-        public void run()
-        {
-            if(!(!pendingReq.isEmpty() || blockScan)) {
-                log.log(Level.WARNING, "WE GOTTA SCAN: ");
-                bluetooth.scanDevices();
-
+    private void scheduleNewScan()
+    {
+        scheduleNewScan(30);
+    }
+    private  void scheduleNewScan(int s)
+    {
+        if(blockScan || !pendingReq.isEmpty())
+            return;
+        scanTimer.removeCallbacks(scanAction);
+        scanTimer.postDelayed(scanAction, s*1000L);
+        for(Messenger client : clients) {
+            try {
+                Message msg = Message.obtain(null, NEXT_SCAN);
+                msg.obj = s;
+                client.send(msg);
+            } catch (RemoteException e) {
+                // If we get here, the client is dead, and we should remove it from the list
+                log.log(Level.INFO, "Removing client: " + client);
+                clients.remove(client);
             }
-//            List<BluetoothDevice> devices = bluetooth.getPairedDevices();
-//            for(BluetoothDevice device : devices)
-//            {
-//                List<Sensor> s = Sensor.find(Sensor.class, "mac = ?", device.getAddress());
-//                if(s.size() > 0)
-//                {
-//                    bluetooth.connectToDevice(device);
-//                    yield halt/resume
-//                }
-//            }
         }
     }
+//    private class SearcherTask extends TimerTask{
+//        @Override
+//        public void run()
+//        {
+//            if(!(!pendingReq.isEmpty() || blockScan)) {
+//                for(Messenger client : clients) {
+//                    try {
+//                        Message msg = Message.obtain(null, BEGIN_SCAN);
+//                        client.send(msg);
+//                    } catch (RemoteException e) {
+//                        // If we get here, the client is dead, and we should remove it from the list
+//                        log.log(Level.INFO, "Removing client: " + client);
+//                        clients.remove(client);
+//                    }
+//                }
+//                log.log(Level.WARNING, "WE GOTTA SCAN: ");
+//                bluetooth.scanDevices();
+//
+//            }
+////            List<BluetoothDevice> devices = bluetooth.getPairedDevices();
+////            for(BluetoothDevice device : devices)
+////            {
+////                List<Sensor> s = Sensor.find(Sensor.class, "mac = ?", device.getAddress());
+////                if(s.size() > 0)
+////                {
+////                    bluetooth.connectToDevice(device);
+////                    yield halt/resume
+////                }
+////            }
+//        }
+//    }
 }

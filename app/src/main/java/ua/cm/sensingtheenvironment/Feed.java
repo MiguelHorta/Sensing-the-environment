@@ -9,12 +9,14 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -31,6 +33,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,6 +41,7 @@ import android.Manifest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,11 +58,13 @@ public class Feed extends AppCompatActivity
 
     private static Logger log = Logger.getLogger("SenseTheEnv");
 
-
+    private View coordinatorLayout;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed);
+        coordinatorLayout = findViewById(R.id.content_feed_coordinator);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -82,12 +88,9 @@ public class Feed extends AppCompatActivity
                     break;
             }
         }
-
-        ListView mEventView = (ListView)findViewById(R.id.event_list);
-        adapter = new AdapterEvent(this, R.layout.content_feed_item , mEventList);
+        ListView mEventView = (ListView) findViewById(R.id.event_list);
+        adapter = new AdapterEvent(this, R.layout.content_feed_item, mEventList);
         mEventView.setAdapter(adapter);
-
-
         Intent i = new Intent(this, Background.class);
         startService(i);
         bindService(i, networkServiceConnection, Context.BIND_AUTO_CREATE);
@@ -96,6 +99,15 @@ public class Feed extends AppCompatActivity
     @Override
     protected void onResume() {
         adapter.notifyDataSetChanged();
+        if(networkService != null)
+        {
+            try {
+                Message msg = Message.obtain(null, Background.REQ_SCAN);
+                networkService.send(msg);
+            } catch (RemoteException e) {
+                // Here, the service has crashed even before we were able to connect
+            }
+        }
         super.onResume();
     }
 
@@ -130,6 +142,14 @@ public class Feed extends AppCompatActivity
                 i.putExtra(EditSensor.ARG_LONGITUDE, 0);
                 startActivity(i);
                 break;
+            case R.id.force_scan:
+                try {
+                    Message msg = Message.obtain(null, Background.REQ_SCAN);
+                    networkService.send(msg);
+                } catch (RemoteException e) {
+                    // Here, the service has crashed even before we were able to connect
+                }
+                Snackbar.make(coordinatorLayout, "Forcing scan", Snackbar.LENGTH_LONG).show();
             default:
                 break;
         }
@@ -198,19 +218,56 @@ public class Feed extends AppCompatActivity
         }
     };
     class IncomingHandler extends Handler {
+        private CountDownTimer countdown = null;
         @Override
         public void handleMessage(Message msg) {
+            if(countdown != null)
+                countdown.cancel(); //TODO Verify the assumption: Every time this function is called countdown needs to reset
             switch (msg.what) {
                 case Background.SENSOR_INFO:
                     mEventList.add(0, new Event(Background.SENSOR_INFO, msg.obj));
                     adapter.notifyDataSetChanged();
+                    ((TextView)findViewById(R.id.content_status_bar)).setText(String.format(Locale.getDefault(), "Received from: %s", (String)msg.obj));
                     break;
                 case Background.NEW_SENSOR:
                     mEventList.add(0, new Event(Background.NEW_SENSOR, msg.obj));
                     adapter.notifyDataSetChanged();
+                    break;
                 case Background.NEAR_SENSOR:
                     mEventList.add(0, new Event(Background.NEAR_SENSOR, msg.obj));
                     adapter.notifyDataSetChanged();
+                    break;
+                case Background.NEXT_SCAN:
+                    log.log(Level.INFO, "SCAN in");
+                    countdown = new CountDownTimer(((int)msg.obj)*1000 , 1000) {
+                        public void onTick(long millisUntilFinished) {
+                            ((TextView)findViewById(R.id.content_status_bar)).setText(String.format(Locale.getDefault(), "Next Scan in: %d", millisUntilFinished / 1000));
+                        }
+
+                        public void onFinish() {
+                            ((TextView)findViewById(R.id.content_status_bar)).setText(getString(R.string.scanning));
+                        }
+                    }.start();
+                    break;
+                case Background.BEGIN_SCAN:
+                    ((TextView)findViewById(R.id.content_status_bar)).setText(getString(R.string.scanning));
+                    break;
+                case Background.FINISH_SCAN:
+                    ((TextView)findViewById(R.id.content_status_bar)).setText(getString(R.string.finish_scanning));
+                    break;
+                case Background.PAIRING:
+                    ((TextView)findViewById(R.id.content_status_bar)).setText(String.format(Locale.getDefault(), "Pairing with: %s", (String)msg.obj));
+                    break;
+                case Background.ATT_CONNECTION:
+                    ((TextView)findViewById(R.id.content_status_bar)).setText((String)msg.obj);
+                    break;
+                case Background.CONNECT_FAILED:
+                case Background.DISCONNECT:
+                case Background.INVALID_DATA:
+                case Background.REQ_FAILED:
+                case Background.SCAN_FAILED:
+                    Snackbar.make(coordinatorLayout, (String)msg.obj, Snackbar.LENGTH_LONG).show();
+                break;
                 default:
                     super.handleMessage(msg);
             }
@@ -262,6 +319,7 @@ public class Feed extends AppCompatActivity
                                     // TODO getDesc shouldn't be used like this
                                     msg.obj = item.getDesc();
                                     networkService.send(msg);
+                                    ((TextView)findViewById(R.id.content_status_bar)).setText(String.format(Locale.getDefault(), "Asking: %s", (String)msg.obj));
                                 } catch (RemoteException e) {
                                    // Here, the service has crashed even before we were able to connect
                                 }

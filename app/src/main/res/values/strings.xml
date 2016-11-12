@@ -33,4 +33,8 @@
     <string name="found_device">Found new device:</string>
     <string name="new_info">Send new data:</string>
     <string name="click_to_details">Click to details</string>
+    <string name="initializing">Initializing...</string>
+    <string name="scanning">Scanning...</string>
+    <string name="finish_scanning">Finished Scan.</string>
+    <string name="force_scan">Scan now</string>
 </resources>
