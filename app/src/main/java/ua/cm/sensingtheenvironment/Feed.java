@@ -14,6 +14,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -27,36 +29,49 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import ua.cm.sensingtheenvironment.database.Sensor;
 
-public class Feed extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+public class Feed extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+    public static final String TAG = "SenseTheEnv";
+    private static final String EVENT_LIST = "event_list";
+    //private static final String BNDL_SERVICE = "service";
     Messenger networkService = null;
-    final Messenger messenger = new Messenger(new IncomingHandler());
-    private final int REQUEST_ACCESS_COARSE_LOCATION = 0x00;
+    final Messenger messenger = new Messenger(new IncomingHandler(new WeakReference<>(this)));
+    final int REQUEST_ACCESS_COARSE_LOCATION = 0x00;
 
-    private ArrayList<Event> mEventList= new ArrayList<>();
+    public ArrayList<Event> getEventList() {
+        return mEventList;
+    }
+
+    private ArrayList<Event> mEventList = new ArrayList<>();
+
+    public AdapterEvent getAdapter() {
+        return adapter;
+    }
+
     AdapterEvent adapter;
 
-    private static Logger log = Logger.getLogger("SenseTheEnv");
+
+    public View getMainView() {
+        return coordinatorLayout;
+    }
 
     private View coordinatorLayout;
     @Override
@@ -64,7 +79,7 @@ public class Feed extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed);
         coordinatorLayout = findViewById(R.id.content_feed_coordinator);
-
+        Log.d(TAG, "Feed Setup^ ");
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -97,17 +112,21 @@ public class Feed extends AppCompatActivity
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(EVENT_LIST, mEventList);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        mEventList = savedInstanceState.getParcelableArrayList(EVENT_LIST);
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
     protected void onResume() {
         adapter.notifyDataSetChanged();
-        if(networkService != null)
-        {
-            try {
-                Message msg = Message.obtain(null, Background.REQ_SCAN);
-                networkService.send(msg);
-            } catch (RemoteException e) {
-                // Here, the service has crashed even before we were able to connect
-            }
-        }
+        Log.d(TAG, "Feed Resume^ ");
         super.onResume();
     }
 
@@ -137,10 +156,10 @@ public class Feed extends AppCompatActivity
         switch (item.getItemId()) {
             // action with ID action_refresh was selected
             case R.id.add_sensor:
-                Intent i = new Intent(this, EditSensor.class);
-                i.putExtra(EditSensor.ARG_LATITUDE, 0);
-                i.putExtra(EditSensor.ARG_LONGITUDE, 0);
-                startActivity(i);
+                intent = new Intent(this, EditSensor.class);
+                intent.putExtra(EditSensor.ARG_LATITUDE, 0);
+                intent.putExtra(EditSensor.ARG_LONGITUDE, 0);
+                startActivity(intent);
                 break;
             case R.id.force_scan:
                 try {
@@ -159,7 +178,7 @@ public class Feed extends AppCompatActivity
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
         Intent intent;
         switch(item.getItemId())
@@ -207,66 +226,84 @@ public class Feed extends AppCompatActivity
                 Message msg = Message.obtain(null, Background.MSG_REGISTER_CLIENT);
                 msg.replyTo = messenger;
                 networkService.send(msg);
-                log.log(Level.INFO, "Connected to service");
+                Log.d(TAG, "Connected to service");
             } catch (RemoteException e) {
                 // Here, the service has crashed even before we were able to connect
             }
         }
         public void onServiceDisconnected(ComponentName className) {
             networkService = null;
-            log.log(Level.INFO, "Disconnected from service");
+            Log.d(TAG, "Disconnected from service");
         }
     };
-    class IncomingHandler extends Handler {
+    static class IncomingHandler extends Handler {
+        private final WeakReference<Feed> ref;
+
+        IncomingHandler(WeakReference<Feed> ref) {
+            this.ref = ref;
+        }
+
         private CountDownTimer countdown = null;
         @Override
         public void handleMessage(Message msg) {
+            if(ref.get() == null)
+            {
+                return;
+            }
             if(countdown != null)
                 countdown.cancel(); //TODO Verify the assumption: Every time this function is called countdown needs to reset
             switch (msg.what) {
                 case Background.SENSOR_INFO:
-                    mEventList.add(0, new Event(Background.SENSOR_INFO, msg.obj));
-                    adapter.notifyDataSetChanged();
-                    ((TextView)findViewById(R.id.content_status_bar)).setText(String.format(Locale.getDefault(), "Received from: %s", (String)msg.obj));
+                    ref.get().getEventList().add(0, new Event(Background.SENSOR_INFO, msg.obj, ref.get()));
+                    ref.get().getAdapter().notifyDataSetChanged();
+                    ((TextView)ref.get().findViewById(R.id.content_status_bar)).setText(String.format(Locale.getDefault(), "Received from: %s", (String)msg.obj));
                     break;
                 case Background.NEW_SENSOR:
-                    mEventList.add(0, new Event(Background.NEW_SENSOR, msg.obj));
-                    adapter.notifyDataSetChanged();
+                    ref.get().getEventList().add(0, new Event(Background.NEW_SENSOR, msg.obj, ref.get()));
+                    ref.get().getAdapter().notifyDataSetChanged();
                     break;
                 case Background.NEAR_SENSOR:
-                    mEventList.add(0, new Event(Background.NEAR_SENSOR, msg.obj));
-                    adapter.notifyDataSetChanged();
+                    ref.get().getEventList().add(0, new Event(Background.NEAR_SENSOR, msg.obj, ref.get()));
+                    ref.get().getAdapter().notifyDataSetChanged();
                     break;
                 case Background.NEXT_SCAN:
-                    log.log(Level.INFO, "SCAN in");
-                    countdown = new CountDownTimer(((int)msg.obj)*1000 , 1000) {
+                    Log.d(TAG, "SCAN in: "+(String)msg.obj);
+                    countdown = new CountDownTimer((Integer.parseInt((String)msg.obj))*1000 , 1000) {
                         public void onTick(long millisUntilFinished) {
-                            ((TextView)findViewById(R.id.content_status_bar)).setText(String.format(Locale.getDefault(), "Next Scan in: %d", millisUntilFinished / 1000));
+                            if(ref.get() != null)
+                                ((TextView) ref.get().findViewById(R.id.content_status_bar)).setText(String.format(Locale.getDefault(), "Next Scan in: %d", millisUntilFinished / 1000));
                         }
 
                         public void onFinish() {
-                            ((TextView)findViewById(R.id.content_status_bar)).setText(getString(R.string.scanning));
+                            if(ref.get() != null)
+                                ((TextView) ref.get().findViewById(R.id.content_status_bar)).setText( ref.get().getString(R.string.scanning));
                         }
                     }.start();
                     break;
                 case Background.BEGIN_SCAN:
-                    ((TextView)findViewById(R.id.content_status_bar)).setText(getString(R.string.scanning));
+                    ((TextView) ref.get().findViewById(R.id.content_status_bar)).setText( ref.get().getString(R.string.scanning));
                     break;
                 case Background.FINISH_SCAN:
-                    ((TextView)findViewById(R.id.content_status_bar)).setText(getString(R.string.finish_scanning));
+                    ((TextView) ref.get().findViewById(R.id.content_status_bar)).setText(ref.get().getString(R.string.finish_scanning));
                     break;
                 case Background.PAIRING:
-                    ((TextView)findViewById(R.id.content_status_bar)).setText(String.format(Locale.getDefault(), "Pairing with: %s", (String)msg.obj));
+                    ((TextView)ref.get().findViewById(R.id.content_status_bar)).setText(String.format(Locale.getDefault(), "Pairing with: %s", (String)msg.obj));
+                    break;
+                case Background.CONNECTED:
+                    ((TextView)ref.get().findViewById(R.id.content_status_bar)).setText((String)msg.obj);
                     break;
                 case Background.ATT_CONNECTION:
-                    ((TextView)findViewById(R.id.content_status_bar)).setText((String)msg.obj);
+                    ((TextView)ref.get().findViewById(R.id.content_status_bar)).setText((String)msg.obj);
+                    break;
+                case Background.INITIALIZING:
+                    ((TextView)ref.get().findViewById(R.id.content_status_bar)).setText(ref.get().getString(R.string.initializing));
                     break;
                 case Background.CONNECT_FAILED:
                 case Background.DISCONNECT:
                 case Background.INVALID_DATA:
                 case Background.REQ_FAILED:
                 case Background.SCAN_FAILED:
-                    Snackbar.make(coordinatorLayout, (String)msg.obj, Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(ref.get().getMainView(), (String)msg.obj, Snackbar.LENGTH_LONG).show();
                 break;
                 default:
                     super.handleMessage(msg);
@@ -275,13 +312,13 @@ public class Feed extends AppCompatActivity
     }
 
     private class AdapterEvent extends ArrayAdapter<Event> {
-        public AdapterEvent(Context context, int resource, List<Event> objects) {
+        AdapterEvent(Context context, int resource, List<Event> objects) {
             super(context, resource, objects);
         }
 
         @NonNull
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(int position, View convertView, @NonNull ViewGroup parent) {
             try {
                 final Event item = getItem(position);
                 View v = null;
@@ -304,7 +341,7 @@ public class Feed extends AppCompatActivity
                 v.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        switch (item.event_type) {
+                        switch (item.getEventType()) {
                             case Background.NEW_SENSOR:
                                 Intent i = new Intent(Feed.this, EditSensor.class);
                                 i.putExtra(EditSensor.ARG_LATITUDE, 0);
@@ -329,84 +366,11 @@ public class Feed extends AppCompatActivity
                 });
                 return v;
             } catch (Exception ex) {
-                log.log(Level.INFO, "Error populating feed list");
+                Log.d(TAG, "Error populating feed list");
                 return convertView;
             }
         }
 
-    }
-
-    private class Event {
-        public Event(int event_type, Object ob) {
-            this.event_type = event_type;
-            this.obj = ob;
-        }
-
-        public int getEvent_type() {
-            return event_type;
-        }
-
-        public Object getObj() {
-            return obj;
-        }
-
-        public String getTitle()
-        {
-            switch (event_type)
-            {
-                case Background.SENSOR_INFO:
-                case Background.NEAR_SENSOR:
-                case Background.NEW_SENSOR:
-                    return ((Sensor)obj).getGivenName();
-                default:
-                    return "Default";
-            }
-        }
-        public String getDesc()
-        {
-            switch (event_type)
-            {
-                case Background.SENSOR_INFO:
-                case Background.NEAR_SENSOR:
-                case Background.NEW_SENSOR:
-                    Sensor s = ((Sensor)obj);
-                    return s.getMAC();
-                default:
-                    return "Default";
-            }
-        }
-
-        public String getAction()
-        {
-            switch (event_type)
-            {
-                case Background.SENSOR_INFO:
-                    return getString(R.string.click_to_details);
-                case Background.NEAR_SENSOR:
-                    return getString(R.string.click_to_request);
-                case Background.NEW_SENSOR:
-                    return getString(R.string.click_to_connect);
-                default:
-                    return "Default";
-            }
-        }
-        public String getEvent()
-        {
-            switch (event_type)
-            {
-                case Background.SENSOR_INFO:
-                    return getString(R.string.new_info);
-                case Background.NEAR_SENSOR:
-                    return getString(R.string.near_sensor);
-                case Background.NEW_SENSOR:
-                    return getString(R.string.found_device);
-                default:
-                    return "Default";
-            }
-        }
-
-        private int event_type;
-        private Object obj;
     }
 
     @Override
@@ -414,4 +378,103 @@ public class Feed extends AppCompatActivity
         unbindService(networkServiceConnection);
         super.onDestroy();
     }
+}
+class Event implements Parcelable {
+    private int event_type;
+    private String title;
+    private String description;
+    private String action;
+    private String context_title;
+    private Long time;
+
+    Event(int event_type, Object obj, Context ctx) {
+        this.event_type = event_type;
+        this.time = System.currentTimeMillis()/1000;
+        switch (event_type)
+        {
+            case Background.SENSOR_INFO:
+                title =  ((Sensor)obj).getGivenName();
+                description = ((Sensor)obj).getMAC();
+                action = ctx.getString(R.string.click_to_details);
+                context_title = ctx.getString(R.string.new_info);
+                break;
+            case Background.NEAR_SENSOR:
+                title =  ((Sensor)obj).getGivenName();
+                description = ((Sensor)obj).getMAC();
+                action =  ctx.getString(R.string.click_to_request);
+                context_title = ctx.getString(R.string.near_sensor);
+                break;
+            case Background.NEW_SENSOR:
+                title =  ((Sensor)obj).getGivenName();
+                description = ((Sensor)obj).getMAC();
+                action = ctx.getString(R.string.click_to_connect);
+                context_title = ctx.getString(R.string.found_device);
+                break;
+            default:
+                title = "Default";
+                description = "Default";
+                action = "Default";
+                context_title= "Default";
+        }
+    }
+
+    int getEventType() {
+        return event_type;
+    }
+
+    public String getTitle()
+    {
+        return title;
+    }
+    String getDesc()
+    {
+        return description;
+    }
+
+    public String getAction()
+    {
+        return action;
+    }
+    String getEvent()
+    {
+        return context_title;
+    }
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags)
+    {
+        dest.writeInt(event_type);
+        dest.writeString(title);
+        dest.writeString(description);
+        dest.writeString(action);
+        dest.writeString(context_title);
+        dest.writeLong(time);
+
+    }
+
+    public static final Parcelable.Creator<Event> CREATOR
+            = new Parcelable.Creator<Event>() {
+        public Event createFromParcel(Parcel in) {
+            return new Event(in);
+        }
+
+        public Event[] newArray(int size) {
+            return new Event[size];
+        }
+    };
+
+    private Event(Parcel in)
+    {
+        event_type = in.readInt();
+        title = in.readString();
+        description = in.readString();
+        action = in.readString();
+        context_title = in.readString();
+        time = in.readLong();
+    }
+
 }

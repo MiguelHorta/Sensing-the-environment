@@ -3,21 +3,17 @@ package ua.cm.sensingtheenvironment;
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.text.BoringLayout;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.RunnableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import me.aflak.bluetooth.Bluetooth;
 import ua.cm.sensingtheenvironment.database.Reading;
@@ -25,9 +21,10 @@ import ua.cm.sensingtheenvironment.database.Sensor;
 
 // CREDITS http://stackoverflow.com/a/6592308
 public class Background extends Service {
-        private static Logger log = Logger.getLogger("SenseTheEnv");
+    private static String TAG = Feed.TAG;
 
     Handler scanTimer;
+    Long startTime = 0L; //Stupid incomplete piece of shit
     Runnable scanAction;
     public static final int MSG_REGISTER_CLIENT = 0x00;
     public static final int NEXT_SCAN = 0x01;
@@ -35,8 +32,9 @@ public class Background extends Service {
     public static final int FINISH_SCAN = 0x03;
     public static final int ATT_CONNECTION = 0x04;
     public static final int PAIRING = 0x05;
-    public static final int CONNECTED = 0x05;
-    public static final int REQ_SCAN = 0x06;
+    public static final int CONNECTED = 0x06;
+    public static final int REQ_SCAN = 0x07;
+    public static final int REQ_CURRENT_STATE = 0x08;
     public static final int NEW_SENSOR = 0x10;
     public static final int NEAR_SENSOR = 0x11;
     public static final int REQ_SENSOR_INFO = 0x12;
@@ -46,6 +44,7 @@ public class Background extends Service {
     public static final int DISCONNECT = 0x22;
     public static final int CONNECT_FAILED = 0x23;
     public static final int INVALID_DATA = 0x24;
+    public static final int INITIALIZING = 0xFF;
 
 
     // NOTE Might be overkill
@@ -57,6 +56,7 @@ public class Background extends Service {
     private String pendingReq = "";
     private int pendingReqAtt = 1;
     private Boolean blockScan = false;
+    private int currentState = INITIALIZING;
 
     public Background() {
     }
@@ -64,7 +64,7 @@ public class Background extends Service {
     @Override
     public void onCreate()
     {
-        log.log(Level.INFO, "Setup: ");
+        Log.d(TAG, "BackGround Setup^ ");
         bluetooth = new Bluetooth(this);
         bluetooth.enableBluetooth();
         scanTimer = new Handler();
@@ -73,7 +73,7 @@ public class Background extends Service {
             public void run() {
                 if (pendingReq.isEmpty()) {
                     sendMessage(BEGIN_SCAN, "", null);
-                    log.log(Level.WARNING, "WE GOTTA SCAN: ");
+                    Log.d(TAG, "WE GOTTA SCAN: ");
                     bluetooth.scanDevices();
                 }
             }
@@ -84,7 +84,7 @@ public class Background extends Service {
 
             @Override
             public void onFinish() {
-                log.log(Level.WARNING, "Scan finished");
+                Log.d(TAG, "Scan finished");
                 if(!pendingReq.isEmpty() && pendingReqAtt < 3 && !blockScan)
                 {
                     pendingReqAtt++;
@@ -101,7 +101,7 @@ public class Background extends Service {
                 scheduleNewScan();
             }
             public void onDevice(BluetoothDevice device) {
-                log.log(Level.WARNING, "Found device: " + device.getName());
+                Log.d(TAG, "Found device: " + device.getName());
                 if(!pendingReq.isEmpty())
                 {
                     if(pendingReq.equals(device.getAddress()))
@@ -109,11 +109,11 @@ public class Background extends Service {
                         blockScan = true;
                         if(device.getBondState() == BluetoothDevice.BOND_NONE || device.getBondState() == BluetoothDevice.BOND_BONDING)
                         { //TODO Verify assumption we can request another pair while state=BONDING
-                            log.log(Level.WARNING, "WE GOTTA PAIR: "+ device.getAddress());
+                            Log.d(TAG, "WE GOTTA PAIR: "+ device.getAddress());
                             bluetooth.pair(device); //Assume that we want the data on 1st pair
                             return;
                         }
-                        log.log(Level.WARNING, "REQUEST CONNECTION: "+ device.getAddress());
+                        Log.d(TAG, "REQUEST CONNECTION: "+ device.getAddress());
                         bluetooth.connectToDevice(device);
                         return;
                     }
@@ -127,13 +127,13 @@ public class Background extends Service {
             }
             @Override
             public void onPair(BluetoothDevice device) {
-                log.log(Level.WARNING, "PAIRED: "+ device.getName());
+                Log.d(TAG, "PAIRED: "+ device.getName());
                 sendMessage(PAIRING, device.getAddress(), null);
                 bluetooth.connectToDevice(device);
             }
             @Override
             public void onUnpair(BluetoothDevice device) {
-                log.log(Level.WARNING, "UNPAIRED: "+ device.getName());
+                Log.d(TAG, "UNPAIRED: "+ device.getName());
             }
             @Override
             public void onError(String message)
@@ -145,7 +145,7 @@ public class Background extends Service {
         bluetooth.setCommunicationCallback(new Bluetooth.CommunicationCallback() {
             @Override
             public void onConnect(BluetoothDevice device) {
-                log.log(Level.WARNING, "WE GOTTA SEND: "+ device.getAddress());
+                Log.d(TAG, "WE GOTTA SEND: "+ device.getAddress());
                 sendMessage(CONNECTED, String.format(Locale.getDefault(), "Connected: %s ", device.getAddress()), null);
                 bluetooth.send("{\"GET\": [\"all\"]}\n");
             }
@@ -164,7 +164,6 @@ public class Background extends Service {
                 }catch (Exception e)
                 {
                     sendMessage(INVALID_DATA, e.getMessage(), null);
-                    return;
                 }finally {
                     restorePeriodicScan();
                 }
@@ -209,16 +208,21 @@ public class Background extends Service {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MSG_REGISTER_CLIENT:
-                    log.log(Level.INFO, "Adding client: " + msg.replyTo);
-                    clients.add(msg.replyTo);
+                    Log.d(TAG, "Adding client: " + msg.replyTo);
+                    if(!clients.contains(msg.replyTo))
+                        clients.add(msg.replyTo);
+                    resendCurrentState();
                     break;
                 case REQ_SENSOR_INFO:
-                    log.log(Level.WARNING, "REQ: "+ (String)msg.obj);
+                    Log.d(TAG, "REQ: "+ (String)msg.obj);
                     scanTimer.removeCallbacks(scanAction);
                     Background.this.handleRequestSensor((String)msg.obj);
                     break;
                 case REQ_SCAN:
                     scheduleNewScan(0);
+                break;
+                case REQ_CURRENT_STATE:
+                    resendCurrentState();
                 break;
                 default:
                     super.handleMessage(msg);
@@ -227,9 +231,40 @@ public class Background extends Service {
         }
     }
 
+    @Override
+    public boolean onUnbind(Intent intent) {
+        return super.onUnbind(intent);
+    }
+
+    private void resendCurrentState()
+    {
+        Log.d(TAG, "--***---"+ currentState);
+        if(currentState != NEXT_SCAN &&
+           currentState != ATT_CONNECTION &&
+           currentState != BEGIN_SCAN &&
+           currentState != FINISH_SCAN &&
+           currentState != PAIRING &&
+           currentState != CONNECTED)
+        {
+            sendMessage(INITIALIZING, "", null);
+            return;
+        }
+        String extra = "";
+        Log.d(TAG, "<>><<><>><<>"+ String.valueOf((System.currentTimeMillis() - startTime)));
+        if(currentState == NEXT_SCAN)
+            extra = String.valueOf(30-(System.currentTimeMillis() - startTime)/1000);
+        else if(currentState == ATT_CONNECTION)
+            extra = String.valueOf(pendingReqAtt);
+        else if(currentState == PAIRING)
+            extra = pendingReq;
+        sendMessage(currentState, extra, null);
+    }
+
     private void sendMessage(int msg_type, String content, Sensor s)
     { //TODO Overloading may be a better path, this one if string is present will always send the string
+        currentState = msg_type;
         for(Messenger client : clients) {
+            Log.d(TAG, client.toString());
             try {
                 Message msg = Message.obtain(null, msg_type);
                 if(!content.isEmpty())
@@ -239,7 +274,7 @@ public class Background extends Service {
                 client.send(msg);
             } catch (RemoteException e) {
                 // If we get here, the client is dead, and we should remove it from the list
-                log.log(Level.INFO, "Removing client: " + client);
+                Log.d(TAG, "Removing client: " + client);
                 clients.remove(client);
             }
         }
@@ -256,21 +291,12 @@ public class Background extends Service {
     }
     private  void scheduleNewScan(int s)
     {
+        startTime = System.currentTimeMillis();
         if(blockScan || !pendingReq.isEmpty())
             return;
         scanTimer.removeCallbacks(scanAction);
         scanTimer.postDelayed(scanAction, s*1000L);
-        for(Messenger client : clients) {
-            try {
-                Message msg = Message.obtain(null, NEXT_SCAN);
-                msg.obj = s;
-                client.send(msg);
-            } catch (RemoteException e) {
-                // If we get here, the client is dead, and we should remove it from the list
-                log.log(Level.INFO, "Removing client: " + client);
-                clients.remove(client);
-            }
-        }
+        sendMessage(NEXT_SCAN, String.valueOf(s), null);
     }
 //    private class SearcherTask extends TimerTask{
 //        @Override
