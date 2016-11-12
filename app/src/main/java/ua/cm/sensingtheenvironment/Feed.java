@@ -1,9 +1,11 @@
 package ua.cm.sensingtheenvironment;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -21,6 +23,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 
 import android.support.design.widget.NavigationView;
@@ -68,7 +71,8 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
 
     AdapterEvent adapter;
 
-
+    private double lastLongitude = 0;
+    private double lastLatitude = 0;
     public View getMainView() {
         return coordinatorLayout;
     }
@@ -109,6 +113,10 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
         Intent i = new Intent(this, Background.class);
         startService(i);
         bindService(i, networkServiceConnection, Context.BIND_AUTO_CREATE);
+
+        i = new Intent(this, GPSService.class);
+        startService(i);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(GPSService.GPS_LAST_LOCATION));
     }
 
     @Override
@@ -157,8 +165,8 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
             // action with ID action_refresh was selected
             case R.id.add_sensor:
                 intent = new Intent(this, EditSensor.class);
-                intent.putExtra(EditSensor.ARG_LATITUDE, 0);
-                intent.putExtra(EditSensor.ARG_LONGITUDE, 0);
+                intent.putExtra(EditSensor.ARG_LATITUDE, lastLatitude);
+                intent.putExtra(EditSensor.ARG_LONGITUDE, lastLongitude);
                 startActivity(intent);
                 break;
             case R.id.force_scan:
@@ -344,8 +352,8 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
                         switch (item.getEventType()) {
                             case Background.NEW_SENSOR:
                                 Intent i = new Intent(Feed.this, EditSensor.class);
-                                i.putExtra(EditSensor.ARG_LATITUDE, 0);
-                                i.putExtra(EditSensor.ARG_LONGITUDE, 0);
+                                i.putExtra(EditSensor.ARG_LATITUDE, lastLatitude);
+                                i.putExtra(EditSensor.ARG_LONGITUDE, lastLongitude);
                                 i.putExtra(EditSensor.ARG_NAME, item.getTitle());
                                 i.putExtra(EditSensor.ARG_MAC, item.getDesc());
                                 startActivity(i);
@@ -378,6 +386,16 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
         unbindService(networkServiceConnection);
         super.onDestroy();
     }
+
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "GOT POS*************");
+            Bundle b = intent.getBundleExtra(GPSService.GPS_LOCATION);
+            lastLatitude = b.getDouble(GPSService.GPS_LATITUDE, 0);
+            lastLongitude = b.getDouble(GPSService.GPS_LONGITUDE, 0);
+        }
+    };
 }
 class Event implements Parcelable {
     private int event_type;
@@ -393,8 +411,8 @@ class Event implements Parcelable {
         switch (event_type)
         {
             case Background.SENSOR_INFO:
-                title =  ((Sensor)obj).getGivenName();
-                description = ((Sensor)obj).getMAC();
+                title =  ((String)obj);
+                description = ((String)obj);
                 action = ctx.getString(R.string.click_to_details);
                 context_title = ctx.getString(R.string.new_info);
                 break;

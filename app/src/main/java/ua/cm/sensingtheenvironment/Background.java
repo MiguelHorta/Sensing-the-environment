@@ -110,10 +110,12 @@ public class Background extends Service {
                         if(device.getBondState() == BluetoothDevice.BOND_NONE || device.getBondState() == BluetoothDevice.BOND_BONDING)
                         { //TODO Verify assumption we can request another pair while state=BONDING
                             Log.d(TAG, "WE GOTTA PAIR: "+ device.getAddress());
+                            sendMessage(PAIRING, device.getAddress(), null);
                             bluetooth.pair(device); //Assume that we want the data on 1st pair
                             return;
                         }
                         Log.d(TAG, "REQUEST CONNECTION: "+ device.getAddress());
+                        sendMessage(CONNECTED, String.format(Locale.getDefault(), "Connecting: %s ", device.getAddress()), null);
                         bluetooth.connectToDevice(device);
                         return;
                     }
@@ -128,7 +130,7 @@ public class Background extends Service {
             @Override
             public void onPair(BluetoothDevice device) {
                 Log.d(TAG, "PAIRED: "+ device.getName());
-                sendMessage(PAIRING, device.getAddress(), null);
+                sendMessage(CONNECTED, String.format(Locale.getDefault(), "Connecting: %s ", device.getAddress()), null);
                 bluetooth.connectToDevice(device);
             }
             @Override
