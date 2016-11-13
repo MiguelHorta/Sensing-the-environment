@@ -1,14 +1,20 @@
 package ua.cm.sensingtheenvironment;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -21,7 +27,7 @@ import ua.cm.sensingtheenvironment.database.Sensor;
 
 // CREDITS http://stackoverflow.com/a/6592308
 public class Background extends Service {
-    private static String TAG = Feed.TAG;
+        private static String TAG = Feed.TAG;
 
     Handler scanTimer;
     Long startTime = 0L; //Stupid incomplete piece of shit
@@ -35,6 +41,7 @@ public class Background extends Service {
     public static final int CONNECTED = 0x06;
     public static final int REQ_SCAN = 0x07;
     public static final int REQ_CURRENT_STATE = 0x08;
+    public static final int DELETE_REFERENCE = 0x09;
     public static final int NEW_SENSOR = 0x10;
     public static final int NEAR_SENSOR = 0x11;
     public static final int REQ_SENSOR_INFO = 0x12;
@@ -57,13 +64,37 @@ public class Background extends Service {
     private int pendingReqAtt = 1;
     private Boolean blockScan = false;
     private int currentState = INITIALIZING;
+    private int refresh_rate;
 
     public Background() {
     }
+    private void showNotification() {
+        NotificationManager man = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        Intent resultIntent = new Intent(this, Feed.class);
+        PendingIntent resultPendingIntent =
+                PendingIntent.getActivity(
+                        this,
+                        0,
+                        resultIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                );
 
+
+        Notification n  = new Notification.Builder(this)
+                .setContentTitle(String.format(Locale.getDefault(), "%s", getString(R.string.app_name)))
+                .setContentText(String.format(Locale.getDefault(), "%s", getString(R.string.app_name)))
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setContentIntent(resultPendingIntent)
+                .setOngoing(true)
+                .build();
+        man.notify(INITIALIZING, n);
+    }
     @Override
     public void onCreate()
     {
+        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        refresh_rate = Integer.valueOf(preferences.getString(getString(R.string.pref_refresh_rate), "30"));
+
         Log.d(TAG, "BackGround Setup^ ");
         bluetooth = new Bluetooth(this);
         bluetooth.enableBluetooth();
@@ -79,13 +110,13 @@ public class Background extends Service {
             }
         };
         scanTimer.postDelayed(scanAction, 5000);
-
+        showNotification();
         bluetooth.setDiscoveryCallback(new Bluetooth.DiscoveryCallback() {
 
             @Override
             public void onFinish() {
                 Log.d(TAG, "Scan finished");
-                if(!pendingReq.isEmpty() && pendingReqAtt < 3 && !blockScan)
+                if(!pendingReq.isEmpty() && pendingReqAtt < Integer.valueOf(preferences.getString(getString(R.string.pref_retries), "3")) && !blockScan)
                 {
                     pendingReqAtt++;
                     sendMessage(ATT_CONNECTION, String.format(Locale.getDefault(), "(%s) Searching: %s", pendingReqAtt, pendingReq), null);
@@ -183,6 +214,7 @@ public class Background extends Service {
                 restorePeriodicScan();
             }
         });
+
     }
 
     private void restorePeriodicScan()
@@ -215,6 +247,11 @@ public class Background extends Service {
                         clients.add(msg.replyTo);
                     resendCurrentState();
                     break;
+                case DELETE_REFERENCE:
+                    Log.d(TAG, "Delete client: " + msg.replyTo);
+                    if(clients.contains(msg.replyTo))
+                        clients.remove(msg.replyTo);
+                    break;
                 case REQ_SENSOR_INFO:
                     Log.d(TAG, "REQ: "+ (String)msg.obj);
                     scanTimer.removeCallbacks(scanAction);
@@ -238,6 +275,14 @@ public class Background extends Service {
         return super.onUnbind(intent);
     }
 
+    @Override
+    public void onDestroy() {
+        bluetooth.disableBluetooth();
+        NotificationManager man = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        man.cancel(INITIALIZING);
+        super.onDestroy();
+    }
+
     private void resendCurrentState()
     {
         Log.d(TAG, "--***---"+ currentState);
@@ -254,7 +299,7 @@ public class Background extends Service {
         String extra = "";
         Log.d(TAG, "<>><<><>><<>"+ String.valueOf((System.currentTimeMillis() - startTime)));
         if(currentState == NEXT_SCAN)
-            extra = String.valueOf(30-(System.currentTimeMillis() - startTime)/1000);
+            extra = String.valueOf(refresh_rate-(System.currentTimeMillis() - startTime)/1000);
         else if(currentState == ATT_CONNECTION)
             extra = String.valueOf(pendingReqAtt);
         else if(currentState == PAIRING)
@@ -289,7 +334,9 @@ public class Background extends Service {
     }
     private void scheduleNewScan()
     {
-        scheduleNewScan(30);
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        refresh_rate = Integer.valueOf(preferences.getString(getString(R.string.pref_refresh_rate), "30"));
+        scheduleNewScan(refresh_rate);
     }
     private  void scheduleNewScan(int s)
     {

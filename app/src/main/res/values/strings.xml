@@ -37,4 +37,14 @@
     <string name="scanning">Scanning...</string>
     <string name="finish_scanning">Finished Scan.</string>
     <string name="force_scan">Scan now</string>
+    <string name="exit">Exit</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="pref_refresh_rate">Refresh Rate(s)</string>
+    <string name="pref_retries">Connection Retries</string>
 </resources>

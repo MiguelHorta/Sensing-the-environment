@@ -63,7 +63,7 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
         return mEventList;
     }
 
-    private ArrayList<Event> mEventList = new ArrayList<>();
+    private ArrayList<Event> mEventList ;
 
     public AdapterEvent getAdapter() {
         return adapter;
@@ -108,6 +108,13 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
             }
         }
         ListView mEventView = (ListView) findViewById(R.id.event_list);
+        if(savedInstanceState != null)
+        {
+            mEventList = savedInstanceState.getParcelableArrayList(EVENT_LIST);
+        }else
+        {
+            mEventList = new ArrayList<>();
+        }
         adapter = new AdapterEvent(this, R.layout.content_feed_item, mEventList);
         mEventView.setAdapter(adapter);
         Intent i = new Intent(this, Background.class);
@@ -123,12 +130,6 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArrayList(EVENT_LIST, mEventList);
         super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        mEventList = savedInstanceState.getParcelableArrayList(EVENT_LIST);
-        super.onRestoreInstanceState(savedInstanceState);
     }
 
     @Override
@@ -177,6 +178,10 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
                     // Here, the service has crashed even before we were able to connect
                 }
                 Snackbar.make(coordinatorLayout, "Forcing scan", Snackbar.LENGTH_LONG).show();
+            break;
+            case R.id.action_settings:
+                intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
             default:
                 break;
         }
@@ -193,6 +198,8 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
         {
             case R.id.nav_map:
                 intent = new Intent(Feed.this, MapsActivity.class);
+                intent.putExtra(GPSService.GPS_LATITUDE, lastLatitude);
+                intent.putExtra(GPSService.GPS_LONGITUDE, lastLongitude);
                 startActivity(intent);
                 break;
             // action with ID action_settings was selected
@@ -204,6 +211,17 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
                 intent = new Intent(this, ReadingListActivity.class);
                 startActivity(intent);
                 break;
+            case R.id.nav_settings:
+                intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
+            break;
+            case R.id.nav_quit:
+                intent = new Intent(this, Background.class);
+                stopService(intent);
+                intent = new Intent(this, Background.class);
+                stopService(intent);
+                this.finish();
+            break;
             case R.id.nav_delete:
                 // TODO MOVE TO SETTINGS ACTIVITY
                 // CREDITS http://stackoverflow.com/a/5127506
@@ -383,6 +401,15 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
 
     @Override
     protected void onDestroy() {
+        try {
+            Message msg = Message.obtain(null, Background.DELETE_REFERENCE);
+            // TODO getDesc shouldn't be used like this
+            msg.replyTo = messenger;
+            networkService.send(msg);
+        } catch (RemoteException e) {
+            // Here, the service has crashed even before we were able to connect
+        }
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
         unbindService(networkServiceConnection);
         super.onDestroy();
     }

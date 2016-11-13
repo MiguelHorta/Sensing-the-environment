@@ -9,6 +9,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.Locale;
+
 import ua.cm.sensingtheenvironment.database.Reading;
 
 /**
@@ -59,7 +61,7 @@ public class ReadingDetailFragment extends Fragment {
 
         // Show the dummy content as text in a TextView.
         if (mItem != null) {
-            ((TextView) rootView.findViewById(R.id.reading_detail)).setText(mItem.getType());
+            ((TextView) rootView.findViewById(R.id.reading_detail)).setText(String.format(Locale.getDefault(), "%s: %.1f", mItem.getType(), mItem.getValue()));
         }
 
         return rootView;

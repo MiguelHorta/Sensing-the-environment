@@ -16,18 +16,24 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.List;
+
 import ua.cm.sensingtheenvironment.database.Reading;
+import ua.cm.sensingtheenvironment.database.Sensor;
 
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private double lat = 0;
+    private double lng = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-
+        lat = getIntent().getDoubleExtra(GPSService.GPS_LATITUDE, 0);
+        lng = getIntent().getDoubleExtra(GPSService.GPS_LONGITUDE, 0);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -47,10 +53,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
+        LatLng you = new LatLng(lat, lng);
+        mMap.addMarker(new MarkerOptions().position(you).title("You"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(you,15));
         // Add a marker in Sydney and move the camera
-        LatLng deti_ua = new LatLng(40.6332877,-8.6599251);
-        mMap.addMarker(new MarkerOptions().position(deti_ua).title("DETI Aq"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(deti_ua,15));
-    }
+        List<Sensor> sensors = Sensor.listAll(Sensor.class);
+        for( Sensor s: sensors) {
+            LatLng tmp = new LatLng(s.getLatitude(), s.getLongitude());
+            mMap.addMarker(new MarkerOptions().position(tmp).title(s.getGivenName()));
+        }
+            }
 }

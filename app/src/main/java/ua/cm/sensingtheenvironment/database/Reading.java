@@ -54,7 +54,10 @@ public class Reading extends SugarRecord {
     {
         return type;
     }
-
+    public double getValue()
+    {
+        return measurementX;
+    }
     public long getTimestamp()
     {
         return time;
