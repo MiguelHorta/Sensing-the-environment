@@ -47,4 +47,7 @@
 
     <string name="pref_refresh_rate">Refresh Rate(s)</string>
     <string name="pref_retries">Connection Retries</string>
+    <string name="credits">Credits</string>
+    <string name="credits_launcher_icon">Icon made by <a href="http://www.flaticon.com/authors/freepik">freepik</a> from <a href="https://www.flaticon.com">www.flaticon.com</a></string>
+    <string name="action_credits">Credits</string>
 </resources>

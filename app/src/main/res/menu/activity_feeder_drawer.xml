@@ -24,6 +24,10 @@
             android:icon="@drawable/ic_settings"
             android:title="@string/action_settings"  />
         <item
+            android:id="@+id/nav_credits"
+            android:icon="@drawable/ic_people"
+            android:title="@string/action_credits"  />
+        <item
             android:id="@+id/nav_quit"
             android:icon="@drawable/ic_power"
             android:title="@string/exit" />

@@ -215,6 +215,10 @@ public class Feed extends AppCompatActivity implements NavigationView.OnNavigati
                 intent = new Intent(this, SettingsActivity.class);
                 startActivity(intent);
             break;
+            case R.id.nav_credits:
+                intent = new Intent(this, Credits.class);
+                startActivity(intent);
+                break;
             case R.id.nav_quit:
                 intent = new Intent(this, Background.class);
                 stopService(intent);
